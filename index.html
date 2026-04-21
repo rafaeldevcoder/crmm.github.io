@@ -6,7 +6,6 @@
     <title>LeverSales - White Label Prototype</title>
     <style>
         /* 1. VARIÁVEIS DE CORES */
-        /* Cores padrão (Modo Escuro) */
         :root {
             --cor-fundo: #121212;
             --cor-painel: #1e1e1e;
@@ -22,7 +21,6 @@
             --filtro-calendario: invert(1);
         }
 
-        /* Cores quando o Modo Claro estiver ativado */
         .tema-claro {
             --cor-fundo: #f4f7f6;
             --cor-painel: #ffffff;
@@ -140,7 +138,7 @@
                             <input type="text" id="telefone" placeholder="(11) 90000-0000" required>
                         </div>
                         <div class="form-group">
-                            <label>E-mail</label>
+                            <label>E-mail (Agenda de Destino)</label>
                             <input type="email" id="email" placeholder="maria@email.com" required>
                         </div>
                         <div class="form-group">
@@ -178,12 +176,8 @@
     <div class="watermark">Desenvolvido por rafaeldevcoder e JpedroDev-jr</div>
 
     <script>
-        // ---------------------------------------------------------
-        // CONFIGURAÇÃO GLOBAL DO SERVIDOR (Caminho base do Render)
-        // ---------------------------------------------------------
         const URL_SERVIDOR = 'https://servidor-prototipo.onrender.com';
 
-        // Função para trocar o tema (Claro/Escuro)
         function trocarTema() {
             document.body.classList.toggle('tema-claro');
             const botaoTema = document.getElementById('btn-tema');
@@ -195,7 +189,6 @@
             }
         }
 
-        // CARREGAR DADOS DO GOOGLE
         async function carregarAgendamentos() {
             const tabela = document.getElementById('tabela-clientes');
             tabela.innerHTML = '<tr><td colspan="4" style="text-align:center; color: var(--cor-primaria);">⚡ Acessando o Google Calendar...</td></tr>';
@@ -204,7 +197,7 @@
                 const resposta = await fetch(URL_SERVIDOR + '/listar-agendamentos');
                 const eventos = await resposta.json();
 
-                tabela.innerHTML = ''; // Limpa a mensagem
+                tabela.innerHTML = ''; 
 
                 if (!eventos || eventos.length === 0) {
                     tabela.innerHTML = '<tr><td colspan="4" style="text-align:center;">Nenhum agendamento futuro encontrado.</td></tr>';
@@ -231,14 +224,12 @@
             }
         }
 
-        // Função de Login
         function entrarNoSistema() {
             document.getElementById('login-screen').style.display = 'none';
             document.getElementById('main-system').style.display = 'flex';
-            carregarAgendamentos(); // Dispara a "Tabela Viva" assim que entra
+            carregarAgendamentos(); 
         }
 
-        // Função do Formulário e Integração
         document.getElementById('formAgendamento').addEventListener('submit', async function(evento) {
             evento.preventDefault(); 
             
@@ -252,7 +243,6 @@
             const dataInicio = document.getElementById('data_inicio').value;
             const dataFim = document.getElementById('data_fim').value;
 
-            // 🛑 TRAVA DE SEGURANÇA: Validação de Datas
             const d1 = new Date(dataInicio);
             const d2 = new Date(dataFim);
 
@@ -282,7 +272,15 @@
                 });
 
                 if (resposta.ok) {
-                    msgStatus.innerText = "✅ Sucesso! Evento sincronizado com o Google Agendas.";
+                    // 🔥 LENDO A RESPOSTA INTELIGENTE DO SERVIDOR
+                    const textoResposta = await resposta.text(); 
+
+                    if (textoResposta.includes('Backup')) {
+                        msgStatus.innerText = "✅ Salvo na agenda LeverSales (O cliente não tem permissão ativada).";
+                    } else {
+                        msgStatus.innerText = "✅ SUCESSO! Salvo DIRETAMENTE na agenda do cliente.";
+                    }
+                    
                     msgStatus.style.color = "var(--cor-primaria)"; 
                     
                     adicionarNaTabela(`${titulo} - ${nome}`, telefone, dataInicio);
