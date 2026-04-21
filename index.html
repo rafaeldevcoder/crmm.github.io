@@ -107,7 +107,7 @@
         <div class="sidebar">
             <h2>LeverSales</h2>
             <div class="menu-item active">📅 Agendamentos</div>
-            <div class="menu-item">👥 Clientes</div>
+            <div class="menu-item">👥 Usuários</div>
             <div class="menu-item">⚙️ Configurações</div>
             
             <div class="menu-item" id="btn-tema" onclick="trocarTema()" style="margin-top: 20px; background: var(--cor-painel);">
@@ -132,7 +132,7 @@
                             <input type="text" id="titulo" placeholder="Ex: Reunião de Apresentação" required>
                         </div>
                         <div class="form-group full">
-                            <label>Nome do Cliente</label>
+                            <label>Nome do Usuário</label>
                             <input type="text" id="nome" placeholder="Ex: Maria Oliveira" required>
                         </div>
                         <div class="form-group">
@@ -162,13 +162,13 @@
                 <table>
                     <thead>
                         <tr>
-                            <th>Cliente e Título</th>
+                            <th>Usuário e Título</th>
                             <th>Contato</th>
                             <th>Início</th>
                             <th>Status no Google</th>
                         </tr>
                     </thead>
-                    <tbody id="tabela-clientes">
+                    <tbody id="tabela-usuarios">
                     </tbody>
                 </table>
             </div>
@@ -197,7 +197,8 @@
 
         // CARREGAR DADOS DO GOOGLE
         async function carregarAgendamentos() {
-            const tabela = document.getElementById('tabela-clientes');
+            // ALTERAÇÃO 5: O getElementById agora procura por 'tabela-usuarios'
+            const tabela = document.getElementById('tabela-usuarios');
             tabela.innerHTML = '<tr><td colspan="4" style="text-align:center; color: var(--cor-primaria);">⚡ Acessando o Google Calendar...</td></tr>';
 
             try {
@@ -246,7 +247,7 @@
             const botao = document.querySelector('button[type="submit"]');
 
             const titulo = document.getElementById('titulo').value;
-            const nome = document.getElementById('nome').value;
+            const nome = document.getElementById('nome').value; // A variável "nome" pode continuar a mesma internamente
             const telefone = document.getElementById('telefone').value;
             const email = document.getElementById('email').value;
             const dataInicio = document.getElementById('data_inicio').value;
@@ -301,7 +302,8 @@
         });
 
         function adicionarNaTabela(tituloCompleto, telefone, data) {
-            const tabela = document.getElementById('tabela-clientes');
+            // ALTERAÇÃO 6: Atualizado aqui também para 'tabela-usuarios'
+            const tabela = document.getElementById('tabela-usuarios');
             const dataFormatada = new Date(data).toLocaleString('pt-BR'); 
 
             const novaLinha = `
