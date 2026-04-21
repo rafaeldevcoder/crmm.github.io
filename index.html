@@ -74,6 +74,20 @@
         th { background-color: var(--cor-cabecalho-tabela); color: var(--cor-primaria); } 
         
         .status-badge { background: var(--cor-primaria); color: white; padding: 5px 10px; border-radius: 20px; font-size: 12px; font-weight: bold; }
+
+        /* ESTILO DA MARCA D'ÁGUA */
+        .watermark {
+            position: fixed;
+            bottom: 15px;
+            right: 15px;
+            font-size: 11px;
+            color: var(--cor-texto-suave);
+            opacity: 0.6;
+            z-index: 9999;
+            pointer-events: none;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+        }
     </style>
 </head>
 <body>
@@ -148,7 +162,7 @@
                 <table>
                     <thead>
                         <tr>
-                            <th>Cliente</th>
+                            <th>Cliente e Título</th>
                             <th>Contato</th>
                             <th>Início</th>
                             <th>Status no Google</th>
@@ -161,16 +175,19 @@
         </div>
     </div>
 
+    <div class="watermark">Desenvolvido por rafaeldevcoder e JpedroDev-jr</div>
+
     <script>
+        // ---------------------------------------------------------
+        // CONFIGURAÇÃO GLOBAL DO SERVIDOR (Caminho base do Render)
+        // ---------------------------------------------------------
+        const URL_SERVIDOR = 'https://servidor-prototipo.onrender.com';
+
         // Função para trocar o tema (Claro/Escuro)
         function trocarTema() {
-            // Liga ou desliga a classe 'tema-claro' no corpo da página
             document.body.classList.toggle('tema-claro');
-            
-            // Pega o botão para mudarmos o texto dele
             const botaoTema = document.getElementById('btn-tema');
             
-            // Verifica se o modo claro está ativo para mudar o texto do botão
             if (document.body.classList.contains('tema-claro')) {
                 botaoTema.innerText = '🌙 Modo Escuro';
             } else {
@@ -178,53 +195,48 @@
             }
         }
 
+        // 🧠 CAMINHO B: FUNÇÃO PARA CARREGAR DADOS DO GOOGLE
+        async function carregarAgendamentos() {
+            const tabela = document.getElementById('tabela-clientes');
+            tabela.innerHTML = '<tr><td colspan="4" style="text-align:center; color: var(--cor-primaria);">⚡ Acessando o Google Calendar...</td></tr>';
 
-        // FUNÇÃO PARA CARREGAR DADOS DO GOOGLE
-async function carregarAgendamentos() {
-    const tabela = document.getElementById('tabela-clientes');
-    tabela.innerHTML = '<tr><td colspan="4" style="text-align:center; color: var(--cor-primaria);">⚡ Acedendo ao Google Calendar...</td></tr>';
+            try {
+                const resposta = await fetch(URL_SERVIDOR + '/listar-agendamentos');
+                const eventos = await resposta.json();
 
-    try {
-        // Ajusta a URL para a nova rota de listagem
-        const URL_LISTAR = URL_DA_PONTE.replace('/receber-agendamento', '/listar-agendamentos');
-        
-        const resposta = await fetch(URL_LISTAR);
-        const eventos = await resposta.json();
+                tabela.innerHTML = ''; // Limpa a mensagem
 
-        tabela.innerHTML = ''; // Limpa a mensagem de carregamento
+                if (!eventos || eventos.length === 0) {
+                    tabela.innerHTML = '<tr><td colspan="4" style="text-align:center;">Nenhum agendamento futuro encontrado.</td></tr>';
+                    return;
+                }
 
-        if (!eventos || eventos.length === 0) {
-            tabela.innerHTML = '<tr><td colspan="4" style="text-align:center;">Nenhum agendamento futuro encontrado.</td></tr>';
-            return;
+                eventos.forEach(evento => {
+                    const inicio = new Date(evento.start.dateTime || evento.start.date).toLocaleString('pt-BR');
+                    const titulo = evento.summary || 'Sem título';
+                    const telefone = evento.description ? evento.description.split('\n')[0].replace('Telefone: ', '') : 'N/A';
+
+                    const linha = `
+                        <tr>
+                            <td><strong>${titulo}</strong></td>
+                            <td style="color: var(--cor-texto-suave);">${telefone}</td>
+                            <td style="color: var(--cor-texto-suave);">${inicio}</td>
+                            <td><span class="status-badge">Sincronizado</span></td>
+                        </tr>
+                    `;
+                    tabela.innerHTML += linha;
+                });
+            } catch (erro) {
+                tabela.innerHTML = '<tr><td colspan="4" style="text-align:center; color: #ff3333;">⚠️ Erro ao sincronizar com o Google.</td></tr>';
+            }
         }
 
-        eventos.forEach(evento => {
-            const inicio = new Date(evento.start.dateTime || evento.start.date).toLocaleString('pt-BR');
-            const titulo = evento.summary || 'Sem título';
-            
-            // Tenta pegar o telefone que guardámos na descrição
-            const telefone = evento.description ? evento.description.split('\n')[0] : 'N/A';
-
-            const linha = `
-                <tr>
-                    <td><strong>${titulo}</strong></td>
-                    <td style="color: var(--cor-texto-suave);">${telefone}</td>
-                    <td style="color: var(--cor-texto-suave);">${inicio}</td>
-                    <td><span class="status-badge">Sincronizado</span></td>
-                </tr>
-            `;
-            tabela.innerHTML += linha;
-        });
-    } catch (erro) {
-        tabela.innerHTML = '<tr><td colspan="4" style="text-align:center; color: #ff3333;">⚠️ Erro ao sincronizar com o Google.</td></tr>';
-    }
-}
         // Função de Login
         function entrarNoSistema() {
-    document.getElementById('login-screen').style.display = 'none';
-    document.getElementById('main-system').style.display = 'flex';
-    carregarAgendamentos(); // Chama a função assim que entra!
-}
+            document.getElementById('login-screen').style.display = 'none';
+            document.getElementById('main-system').style.display = 'flex';
+            carregarAgendamentos(); // Dispara a "Tabela Viva" assim que entra
+        }
 
         // Função do Formulário e Integração
         document.getElementById('formAgendamento').addEventListener('submit', async function(evento) {
@@ -232,18 +244,29 @@ async function carregarAgendamentos() {
             
             const msgStatus = document.getElementById('mensagem-status');
             const botao = document.querySelector('button[type="submit"]');
-            
-            botao.innerText = "Processando Integração...";
-            botao.style.background = "var(--cor-borda)"; 
-            msgStatus.innerText = "";
 
+            const titulo = document.getElementById('titulo').value;
             const nome = document.getElementById('nome').value;
             const telefone = document.getElementById('telefone').value;
             const email = document.getElementById('email').value;
             const dataInicio = document.getElementById('data_inicio').value;
             const dataFim = document.getElementById('data_fim').value;
 
+            // 🛑 TRAVA DE SEGURANÇA: Validação de Datas
+            const d1 = new Date(dataInicio);
+            const d2 = new Date(dataFim);
+
+            if (d2 <= d1) {
+                alert('⚠️ A Data de Fim não pode ser menor ou igual à Data de Início! Corrija para continuar.');
+                return;
+            }
+
+            botao.innerText = "Processando Integração...";
+            botao.style.background = "var(--cor-borda)"; 
+            msgStatus.innerText = "";
+
             const pacoteDeDados = {
+                titulo: titulo,
                 nome: nome,
                 telefone: telefone,
                 email: email,
@@ -252,10 +275,7 @@ async function carregarAgendamentos() {
             };
 
             try {
-                // ATENÇÃO: Lembre-se de trocar localhost pelo link do Ngrok antes da apresentação
-                const URL_DA_PONTE = 'https://servidor-prototipo.onrender.com/receber-agendamento';
-
-                const resposta = await fetch(URL_DA_PONTE, {
+                const resposta = await fetch(URL_SERVIDOR + '/receber-agendamento', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(pacoteDeDados)
@@ -264,14 +284,15 @@ async function carregarAgendamentos() {
                 if (resposta.ok) {
                     msgStatus.innerText = "✅ Sucesso! Evento sincronizado com o Google Agendas.";
                     msgStatus.style.color = "var(--cor-primaria)"; 
-                    adicionarNaTabela(nome, telefone, dataInicio);
+                    
+                    adicionarNaTabela(`${titulo} - ${nome}`, telefone, dataInicio);
                     document.getElementById('formAgendamento').reset();
                 } else {
                     msgStatus.innerText = "❌ Erro ao enviar para a Agenda.";
                     msgStatus.style.color = "#ff3333"; 
                 }
             } catch (erro) {
-                msgStatus.innerText = "⚠️ Erro de conexão! A Ponte Node.js está ligada no computador?";
+                msgStatus.innerText = "⚠️ Erro de conexão com o Motor no Render.";
                 msgStatus.style.color = "#ff3333";
             } finally {
                 botao.innerText = "Salvar e Enviar para Agenda 🚀";
@@ -279,14 +300,13 @@ async function carregarAgendamentos() {
             }
         });
 
-        // Função de Atualizar Tabela Visual
-        function adicionarNaTabela(nome, telefone, data) {
+        function adicionarNaTabela(tituloCompleto, telefone, data) {
             const tabela = document.getElementById('tabela-clientes');
             const dataFormatada = new Date(data).toLocaleString('pt-BR'); 
 
             const novaLinha = `
                 <tr>
-                    <td><strong>${nome}</strong></td>
+                    <td><strong>${tituloCompleto}</strong></td>
                     <td style="color: var(--cor-texto-suave);">${telefone}</td>
                     <td style="color: var(--cor-texto-suave);">${dataFormatada}</td>
                     <td><span class="status-badge">Sincronizado</span></td>
