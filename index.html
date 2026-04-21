@@ -178,11 +178,53 @@
             }
         }
 
+
+        // FUNÇÃO PARA CARREGAR DADOS DO GOOGLE
+async function carregarAgendamentos() {
+    const tabela = document.getElementById('tabela-clientes');
+    tabela.innerHTML = '<tr><td colspan="4" style="text-align:center; color: var(--cor-primaria);">⚡ Acedendo ao Google Calendar...</td></tr>';
+
+    try {
+        // Ajusta a URL para a nova rota de listagem
+        const URL_LISTAR = URL_DA_PONTE.replace('/receber-agendamento', '/listar-agendamentos');
+        
+        const resposta = await fetch(URL_LISTAR);
+        const eventos = await resposta.json();
+
+        tabela.innerHTML = ''; // Limpa a mensagem de carregamento
+
+        if (!eventos || eventos.length === 0) {
+            tabela.innerHTML = '<tr><td colspan="4" style="text-align:center;">Nenhum agendamento futuro encontrado.</td></tr>';
+            return;
+        }
+
+        eventos.forEach(evento => {
+            const inicio = new Date(evento.start.dateTime || evento.start.date).toLocaleString('pt-BR');
+            const titulo = evento.summary || 'Sem título';
+            
+            // Tenta pegar o telefone que guardámos na descrição
+            const telefone = evento.description ? evento.description.split('\n')[0] : 'N/A';
+
+            const linha = `
+                <tr>
+                    <td><strong>${titulo}</strong></td>
+                    <td style="color: var(--cor-texto-suave);">${telefone}</td>
+                    <td style="color: var(--cor-texto-suave);">${inicio}</td>
+                    <td><span class="status-badge">Sincronizado</span></td>
+                </tr>
+            `;
+            tabela.innerHTML += linha;
+        });
+    } catch (erro) {
+        tabela.innerHTML = '<tr><td colspan="4" style="text-align:center; color: #ff3333;">⚠️ Erro ao sincronizar com o Google.</td></tr>';
+    }
+}
         // Função de Login
         function entrarNoSistema() {
-            document.getElementById('login-screen').style.display = 'none';
-            document.getElementById('main-system').style.display = 'flex';
-        }
+    document.getElementById('login-screen').style.display = 'none';
+    document.getElementById('main-system').style.display = 'flex';
+    carregarAgendamentos(); // Chama a função assim que entra!
+}
 
         // Função do Formulário e Integração
         document.getElementById('formAgendamento').addEventListener('submit', async function(evento) {
