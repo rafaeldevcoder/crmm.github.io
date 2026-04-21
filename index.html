@@ -6,6 +6,7 @@
     <title>LeverSales - White Label Prototype</title>
     <style>
         /* 1. VARIÁVEIS DE CORES */
+        /* Cores padrão (Modo Escuro) */
         :root {
             --cor-fundo: #121212;
             --cor-painel: #1e1e1e;
@@ -21,6 +22,7 @@
             --filtro-calendario: invert(1);
         }
 
+        /* Cores quando o Modo Claro estiver ativado */
         .tema-claro {
             --cor-fundo: #f4f7f6;
             --cor-painel: #ffffff;
@@ -34,6 +36,7 @@
             --filtro-calendario: invert(0);
         }
 
+        /* 2. APLICANDO AS VARIÁVEIS NO DESIGN */
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; transition: background-color 0.3s, color 0.3s; }
         
         body { background-color: var(--cor-fundo); color: var(--cor-texto); overflow-x: hidden; }
@@ -72,6 +75,7 @@
         
         .status-badge { background: var(--cor-primaria); color: white; padding: 5px 10px; border-radius: 20px; font-size: 12px; font-weight: bold; }
 
+        /* ESTILO DA MARCA D'ÁGUA */
         .watermark {
             position: fixed;
             bottom: 15px;
@@ -120,24 +124,24 @@
             </div>
 
             <div class="card">
-                <h3 style="margin-bottom: 20px;">Agendar Atendimento (Uso Interno)</h3>
+                <h3 style="margin-bottom: 20px;">Novo Agendamento</h3>
                 <form id="formAgendamento">
                     <div class="form-grid">
                         <div class="form-group full">
-                            <label>Motivo / Tipo de Reunião</label>
-                            <input type="text" id="titulo" placeholder="Ex: Fechamento de Proposta" required>
+                            <label>Título do Agendamento</label>
+                            <input type="text" id="titulo" placeholder="Ex: Reunião de Apresentação" required>
                         </div>
                         <div class="form-group full">
-                            <label>Nome do Cliente (Contato)</label>
+                            <label>Nome do Cliente</label>
                             <input type="text" id="nome" placeholder="Ex: Maria Oliveira" required>
                         </div>
                         <div class="form-group">
-                            <label>WhatsApp do Cliente</label>
+                            <label>WhatsApp</label>
                             <input type="text" id="telefone" placeholder="(11) 90000-0000" required>
                         </div>
                         <div class="form-group">
-                            <label>SEU E-mail (Sua agenda pessoal)</label>
-                            <input type="email" id="email" placeholder="seu.email@leversales.com.br" required>
+                            <label>E-mail</label>
+                            <input type="email" id="email" placeholder="maria@email.com" required>
                         </div>
                         <div class="form-group">
                             <label>Data de Início</label>
@@ -148,13 +152,13 @@
                             <input type="datetime-local" id="data_fim" required>
                         </div>
                     </div>
-                    <button type="submit" class="btn-orange" style="margin-top: 20px;">Salvar na Minha Agenda 🚀</button>
+                    <button type="submit" class="btn-orange" style="margin-top: 20px;">Salvar e Enviar para Agenda 🚀</button>
                     <p id="mensagem-status" style="margin-top: 15px; font-weight: bold; text-align: center;"></p>
                 </form>
             </div>
 
             <div class="card">
-                <h3 style="margin-bottom: 15px;">Últimos Registros do Sistema</h3>
+                <h3 style="margin-bottom: 15px;">Últimos Registros</h3>
                 <table>
                     <thead>
                         <tr>
@@ -174,8 +178,12 @@
     <div class="watermark">Desenvolvido por rafaeldevcoder e JpedroDev-jr</div>
 
     <script>
+        // ---------------------------------------------------------
+        // CONFIGURAÇÃO GLOBAL DO SERVIDOR (Caminho base do Render)
+        // ---------------------------------------------------------
         const URL_SERVIDOR = 'https://servidor-prototipo.onrender.com';
 
+        // Função para trocar o tema (Claro/Escuro)
         function trocarTema() {
             document.body.classList.toggle('tema-claro');
             const botaoTema = document.getElementById('btn-tema');
@@ -187,15 +195,16 @@
             }
         }
 
+        // CARREGAR DADOS DO GOOGLE
         async function carregarAgendamentos() {
             const tabela = document.getElementById('tabela-clientes');
-            tabela.innerHTML = '<tr><td colspan="4" style="text-align:center; color: var(--cor-primaria);">⚡ Acessando a Agenda Master...</td></tr>';
+            tabela.innerHTML = '<tr><td colspan="4" style="text-align:center; color: var(--cor-primaria);">⚡ Acessando o Google Calendar...</td></tr>';
 
             try {
                 const resposta = await fetch(URL_SERVIDOR + '/listar-agendamentos');
                 const eventos = await resposta.json();
 
-                tabela.innerHTML = ''; 
+                tabela.innerHTML = ''; // Limpa a mensagem
 
                 if (!eventos || eventos.length === 0) {
                     tabela.innerHTML = '<tr><td colspan="4" style="text-align:center;">Nenhum agendamento futuro encontrado.</td></tr>';
@@ -222,12 +231,14 @@
             }
         }
 
+        // Função de Login
         function entrarNoSistema() {
             document.getElementById('login-screen').style.display = 'none';
             document.getElementById('main-system').style.display = 'flex';
-            carregarAgendamentos(); 
+            carregarAgendamentos(); // Dispara a "Tabela Viva" assim que entra
         }
 
+        // Função do Formulário e Integração
         document.getElementById('formAgendamento').addEventListener('submit', async function(evento) {
             evento.preventDefault(); 
             
@@ -241,6 +252,7 @@
             const dataInicio = document.getElementById('data_inicio').value;
             const dataFim = document.getElementById('data_fim').value;
 
+            // 🛑 TRAVA DE SEGURANÇA: Validação de Datas
             const d1 = new Date(dataInicio);
             const d2 = new Date(dataFim);
 
@@ -270,15 +282,7 @@
                 });
 
                 if (resposta.ok) {
-                    const textoResposta = await resposta.text(); 
-
-                    // A MUDANÇA NAS MENSAGENS DE AVISO ESTÁ AQUI:
-                    if (textoResposta.includes('Backup')) {
-                        msgStatus.innerText = "✅ Salvo na agenda Geral (O sistema ainda não tem permissão para gravar na sua conta pessoal).";
-                    } else {
-                        msgStatus.innerText = "✅ SUCESSO! Reunião salva na SUA agenda pessoal.";
-                    }
-                    
+                    msgStatus.innerText = "✅ Sucesso! Evento sincronizado com o Google Agendas.";
                     msgStatus.style.color = "var(--cor-primaria)"; 
                     
                     adicionarNaTabela(`${titulo} - ${nome}`, telefone, dataInicio);
@@ -291,7 +295,7 @@
                 msgStatus.innerText = "⚠️ Erro de conexão com o Motor no Render.";
                 msgStatus.style.color = "#ff3333";
             } finally {
-                botao.innerText = "Salvar na Minha Agenda 🚀";
+                botao.innerText = "Salvar e Enviar para Agenda 🚀";
                 botao.style.background = "var(--cor-primaria)";
             }
         });
